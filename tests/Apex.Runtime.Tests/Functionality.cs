@@ -5,11 +5,14 @@ using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Apex.Runtime.Tests
 {
     public class Functionality
     {
+        private readonly ITestOutputHelper _testOutputHelper;
+
         private readonly Memory sut;
 
         private struct Test3
@@ -28,6 +31,18 @@ namespace Apex.Runtime.Tests
         {
             public Test2 Test2;
             public int X;
+        }
+
+        public class TestClassWithGuidAndString
+        {
+            private readonly Guid _id;
+            private readonly string _name;
+
+            public TestClassWithGuidAndString(Guid id, string name)
+            {
+                _id = id;
+                _name = name;
+            }
         }
 
         private class TestLoop
@@ -57,8 +72,9 @@ namespace Apex.Runtime.Tests
             }
         }
 
-        public Functionality()
+        public Functionality(ITestOutputHelper testOutputHelper)
         {
+            _testOutputHelper = testOutputHelper;
             sut = new Memory(Memory.Mode.Graph);
         }
 
@@ -75,9 +91,23 @@ namespace Apex.Runtime.Tests
 
             var actual = sut.SizeOf(t);
 
-            t = func();
+            //t = func();
+
+            _testOutputHelper.WriteLine($"SizeOf = {actual}");
 
             actual.Should().Be(e - s + adjustment);
+        }
+
+        [Fact]
+        public void Guid()
+        {
+            sut.SizeOf(System.Guid.Empty).Should().Be(16);
+        }
+
+        [Fact]
+        public void ClassGuid()
+        {
+            ExactSize(() => new TestClassWithGuidAndString(System.Guid.Empty, "123456789"));
         }
 
         [Fact]
@@ -85,9 +115,13 @@ namespace Apex.Runtime.Tests
         {
             sut.SizeOf<string>(null).Should().Be(4);
 
-            var x = new Test { Test2 = new Test2 { Test3 = new Test3 { } } };
-
             ExactSize(() => new Test { Test2 = new Test2 { Test3 = new Test3 { } } });
+        }
+
+        [Fact]
+        public void TestNested2()
+        {
+            ExactSize(() => new Test { Test2 = new Test2 { Test3 = new Test3 { asd = "Hello World!"} } });
         }
 
         [Fact]

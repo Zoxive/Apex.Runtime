@@ -31,7 +31,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 
@@ -42,6 +41,19 @@ namespace ObjectLayoutInspector
     /// </summary>
     public static class TypeInspector
     {
+        private static readonly Dictionary<Type, int> SupportedPrimitiveTypesAndSizes = new Dictionary<Type, int>
+        {
+            { typeof(Int16), sizeof(Int16) },
+            { typeof(UInt16), sizeof(UInt16) },
+            { typeof(Int32), sizeof(Int32) },
+            { typeof(UInt32), sizeof(UInt32) },
+            { typeof(Int64), sizeof(Int64) },
+            { typeof(UInt64), sizeof(UInt64) },
+            { typeof(Double), sizeof(Double) },
+            { typeof(Decimal), sizeof(Decimal) },
+            { typeof(Guid), 16 }
+        };
+
         /// <summary>
         /// Returns an instance size and the overhead for a given type.
         /// </summary>
@@ -53,20 +65,31 @@ namespace ObjectLayoutInspector
         {
             if (type.IsValueType)
             {
+                if (type.IsPrimitive && SupportedPrimitiveTypesAndSizes.TryGetValue(type, out var primitiveSize))
+                {
+                    return (size: primitiveSize, overhead: 0);
+                }
+
                 return (size: GetSizeOfValueTypeInstance(type), overhead: 0);
             }
 
             var size = GetSizeOfReferenceTypeInstance(type);
-            return (size, 2 * IntPtr.Size);
+            return (size, overhead: 2 * IntPtr.Size);
         }
 
         /// <summary>
         /// Return s the size of a reference type instance excluding the overhead.
         /// </summary>
-        public static int GetSizeOfReferenceTypeInstance(Type type)
+        private static int GetSizeOfReferenceTypeInstance(Type type)
         {
             Debug.Assert(!type.IsValueType);
 
+            var (instance, success) = TryCreateInstanceSafe(type);
+            if (success)
+                return (int)CSharpRuntimeHelpers.GetRawObjectDataSize(instance);
+
+            return IntPtr.Size;
+            /*
             var fields = GetFieldOffsets(type);
 
             if (fields.Length == 0)
@@ -84,6 +107,7 @@ namespace ObjectLayoutInspector
             // Rounding this stuff to the nearest ptr-size boundary
             int roundTo = IntPtr.Size - 1;
             return (sizeCandidate + roundTo) & (~roundTo);
+            */
         }
 
         /// <summary>
@@ -92,7 +116,7 @@ namespace ObjectLayoutInspector
         /// <remarks>
         /// For reference types the size is always a PtrSize.
         /// </remarks>
-        public static int GetFieldSize(Type t)
+        private static int GetFieldSize(Type t)
         {
             if (t.IsValueType)
             {
@@ -109,10 +133,18 @@ namespace ObjectLayoutInspector
         {
             Debug.Assert(type.IsValueType);
 
+            var (instance, success) = TryCreateInstanceSafe(type);
+            if (success)
+                return (int)CSharpRuntimeHelpers.GetRawObjectDataSize(instance);
+                //return (int)CSharpRuntimeHelpers.HeapSize(instance);
+
+            return 0;
+            /*
             var generatedType = typeof(SizeComputer<>).MakeGenericType(type);
             // The offset of the second field is the size of the 'type'
             var fieldsOffsets = GetFieldOffsets(generatedType);
             return fieldsOffsets[1].offset;
+            */
         }
 
         /// <summary>
@@ -131,14 +163,12 @@ namespace ObjectLayoutInspector
         /// <summary>
         /// Gets an array of field information with their offsets for a given <paramref name="t"/>.
         /// </summary>
-        public static (FieldInfo fieldInfo, int offset)[] GetFieldOffsets(Type t)
+        private static (FieldInfo fieldInfo, int offset)[] GetFieldOffsets(Type t)
         {
             // GetFields does not return private fields from the base types.
             // Need to use a custom helper function.
             var fields = TypeFields.GetFields(t);
             //var fields2 = t.GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic);
-
-            var fieldOffsetInspector = GenerateFieldOffsetInspectionFunction(fields);
 
             var (instance, success) = TryCreateInstanceSafe(t);
             if (!success)
@@ -146,7 +176,7 @@ namespace ObjectLayoutInspector
                 return Array.Empty<(FieldInfo, int)>();
             }
 
-            var addresses = fieldOffsetInspector(instance!);
+            var addresses = FieldOffsetInspection(instance!);
 
             if (addresses.Length <= 1)
             {
@@ -164,8 +194,10 @@ namespace ObjectLayoutInspector
             long GetBaseLine(long referenceAddress) => t.IsValueType ? referenceAddress : referenceAddress + IntPtr.Size;
         }
 
-        private static Func<object, long[]> GenerateFieldOffsetInspectionFunction(List<FieldInfo> fields)
+        private static long[] FieldOffsetInspection(object obj)
         {
+            return Array.Empty<long>();
+            /*
             var method = new DynamicMethod(
                 name: "GetFieldOffsets",
                 returnType: typeof(long[]),
@@ -224,6 +256,7 @@ namespace ObjectLayoutInspector
             ilGen.Emit(OpCodes.Ret);
 
             return (Func<object, long[]>)method.CreateDelegate(typeof(Func<object, long[]>));
+            */
         }
 
         /// <summary>
@@ -235,7 +268,7 @@ namespace ObjectLayoutInspector
         /// * Open generic types like <code>typeof(List&lt;&gt;)</code>
         /// * Abstract types
         /// </remarks>
-        public static (object? result, bool success) TryCreateInstanceSafe(Type t)
+        private static (object? result, bool success) TryCreateInstanceSafe(Type t)
         {
             if (!CanCreateInstance(t))
             {

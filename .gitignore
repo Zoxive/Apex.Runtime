@@ -7,3 +7,4 @@ bin
 obj
 *.trx
 /tests/Apex.Runtime.Tests/coverage.cobertura.xml
+.idea
