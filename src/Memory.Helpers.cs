@@ -13,7 +13,7 @@ namespace Apex.Runtime
     {
         internal static class Sizes<T>
         {
-            public static Func<T, Memory, long> Method;
+            public static Func<T, Memory, long>? Method;
         }
 
         internal static class DynamicCode
@@ -30,6 +30,7 @@ namespace Apex.Runtime
                 return _virtualMethods.GetOrAdd(type, t => GenerateMethodImpl(t, isVirtual));
             }
 
+            static readonly MethodInfo MathFloorDecimalMethod = typeof(Math).GetMethod("Floor", new Type[1] { typeof(decimal) });
             private static Delegate GenerateMethodImpl(Type type, bool isVirtual)
             {
                 var source = Expression.Parameter(isVirtual ? typeof(object) : type, "obj");
@@ -61,18 +62,47 @@ namespace Apex.Runtime
                 {
                     if (type == typeof(string))
                     {
+                        static Expression CallFloor(ParameterExpression castedSource)
+                        {
+                            return Expression.Convert(Expression.Call
+                            (
+                                MathFloorDecimalMethod,
+                                Expression.Convert
+                                (
+                                    Expression.Divide
+                                    (
+                                        Expression.Subtract(Expression.Property(castedSource, "Length"), Expression.Constant(2)),
+                                        Expression.Constant(4)
+                                    ),
+                                    typeof(decimal)
+                                )
+                            ), typeof(int));
+                        }
+
                         statements.Add(Expression.AddAssign(result, Expression.Condition(
                                Expression.ReferenceEqual(castedSource, Expression.Constant(null)),
                                Expression.Constant(0L),
                                Expression.Condition(
                                    Expression.Equal(Expression.Property(castedSource, "Length"), Expression.Constant(0)),
                                    Expression.Constant(0L),
-                                    Expression.Convert(
-                                        Expression.And(Expression.Constant(0b11111100),
-                                            Expression.Add(Expression.Constant(IntPtr.Size * 4), Expression.Multiply(Expression.Constant(2), Expression.Property(castedSource, "Length")))
-                                            ),
-                                        typeof(long))
+                                   Expression.Condition(
+                                       Expression.Equal(Expression.Property(castedSource, "Length"), Expression.Constant(1)),
+                                   Expression.Constant(24L),
+                                       Expression.Convert
+                                       (
+                                           Expression.Add
+                                           (
+                                               Expression.Multiply
+                                               (
+                                                   Expression.Add(CallFloor(castedSource), Expression.Constant(1)),
+                                                   Expression.Constant(IntPtr.Size)
+                                               ),
+                                               Expression.Constant(IntPtr.Size * 3)
+                                           ),
+                                           typeof(long)
+                                       )
                                  )
+                               )
                                )));
                     }
                     else if (type.IsArray)

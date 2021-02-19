@@ -107,7 +107,9 @@ namespace Apex.Runtime.Tests
         [Fact]
         public void ClassGuid()
         {
-            ExactSize(() => new TestClassWithGuidAndString(System.Guid.Empty, "123456789"));
+            sut.SizeOf(new TestClassWithGuidAndString(System.Guid.Empty, "123456789")).Should().Be(80);
+            ExactSize(() => new TestClassWithGuidAndString(System.Guid.Empty,""));
+            ExactSize(() => new TestClassWithGuidAndString(System.Guid.Empty, "123456789"), (int)sut.SizeOf("123457689"));
         }
 
         [Fact]
@@ -119,7 +121,7 @@ namespace Apex.Runtime.Tests
         }
 
         [Fact]
-        public void TestNested2()
+        public void TestNested_WithString()
         {
             ExactSize(() => new Test { Test2 = new Test2 { Test3 = new Test3 { asd = "Hello World!"} } });
         }
@@ -220,12 +222,15 @@ namespace Apex.Runtime.Tests
         [Fact]
         public void Dictionary()
         {
-            ExactSize(() => new Dictionary<int, int>(100));
+            ExactSize(() => new Dictionary<int, int>(100), -4);
         }
 
         [Fact]
         public void Strings()
         {
+            ExactSize(() => new string(' ', 0));
+            ExactSize(() => new string(' ', 1));
+            sut.SizeOf(new string(' ', 1)).Should().Be(24);
             for (int i = 0; i <= 100; ++i)
             {
                 ExactSize(() => new string(' ', i));
@@ -268,6 +273,8 @@ namespace Apex.Runtime.Tests
             sut.SizeOf(Task.FromResult(4)).Should().Be(44);
 
             sut.SizeOf(Task.FromResult(4L)).Should().Be(52);
+
+            ExactSize(() => Task.FromResult(4), (int)sut.SizeOf(4));
         }
 
         [Fact]

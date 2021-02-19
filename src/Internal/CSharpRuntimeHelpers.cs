@@ -8,111 +8,66 @@ namespace Apex.Runtime.Internal
 {
     public static class CSharpRuntimeHelpers
     {
-        private static readonly MethodInfo GetRawObjectDataSizeMethod;
-        private static MethodInfo GetMethodTableMethod;
+        private static bool IsRunningOnMono { get; }
 
         static CSharpRuntimeHelpers()
         {
-            GetRawObjectDataSizeMethod = typeof(RuntimeHelpers).GetMethod("GetRawObjectDataSize", BindingFlags.Static | BindingFlags.NonPublic)!;
-            GetMethodTableMethod = typeof(RuntimeHelpers).GetMethod("GetMethodTable", BindingFlags.Static | BindingFlags.NonPublic)!;
+            IsRunningOnMono = Type.GetType("Mono.Runtime") != null;
         }
 
+        internal static ref byte GetRawData(this object obj) => ref Unsafe.As<RawData>(obj)!.Data;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static unsafe MethodTable* GetMethodTable(object obj)
+        {
+            var offset = IsRunningOnMono ? -2 : -1;
+            return (MethodTable*) Unsafe.Add(ref Unsafe.As<byte, IntPtr>(ref obj.GetRawData()), offset);
+        }
+
+        // Taken from https://github.com/dotnet/runtime/blob/c5f3704cb1f98c9b133d547011241d1ee0b4694b/src/coreclr/System.Private.CoreLib/src/System/Runtime/CompilerServices/RuntimeHelpers.CoreCLR.cs#L227
         public static ulong GetRawObjectDataSize(object obj)
         {
-            var intPtr = (UIntPtr)GetRawObjectDataSizeMethod.Invoke(null, new []{ obj })!;
-            return (ulong)intPtr;
+            unsafe
+            {
+                MethodTable* methodTablePointer = GetMethodTable(obj);
+
+                // See comment on RawArrayData for details
+                nuint rawSize = methodTablePointer->BaseSize - (nuint)(2 * sizeof(IntPtr));
+                if (methodTablePointer->HasComponentSize)
+                    rawSize += (uint)Unsafe.As<RawArrayData>(obj)!.Length * (nuint)methodTablePointer->ComponentSize;
+
+                GC.KeepAlive(obj); // Keep MethodTable alive
+
+                return rawSize;
+            }
         }
-
-		private static (uint baseSize, int componentSize) ReadMethodTableSizes(object obj)
-		{
-			unsafe
-			{
-				var result = (Pointer)GetMethodTableMethod.Invoke(null, new [] { obj })!;
-				var methodTable = (MethodTable*) Pointer.Unbox(result);
-				return (methodTable->BaseSize, methodTable->ComponentSize);
-			}
-		}
-
-        internal static bool IsString<T>() => typeof(T) == typeof(string);
-
-        internal static bool IsString<T>(T value) => value is string;
-
-        internal static bool IsArray<T>() => typeof(T).IsArray || typeof(T) == typeof(Array);
-
-        internal static bool IsArray<T>(T value) => value is Array;
-
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static long HeapSize<T>(T value) where T : class
-		{
-			// Sanity check
-			//Conditions.Require(!Runtime.Info.IsStruct(value));
-			if (value is null)
-			{
-				return 0;
-			}
-
-			// TODO
-			if (value?.GetType().IsValueType == true)
-			{
-				return 0;
-			}
-
-
-			// By manually reading the MethodTable*, we can calculate the size correctly if the reference
-			// is boxed or cloaked
-			//var methodTable = ReadMetaType(value);
-			var (baseSize, componentSize) = ReadMethodTableSizes(value);
-
-			// Value of GetSizeField()
-			int length = 0;
-
-			/**
-			 * Type			x86 size				x64 size
-			 *
-			 * object		12						24
-			 * object[]		16 + length * 4			32 + length * 8
-			 * int[]		12 + length * 4			28 + length * 4
-			 * byte[]		12 + length				24 + length
-			 * string		14 + length * 2			26 + length * 2
-			 */
-
-			// From object.h line 65:
-
-			/* 	  The size of the object in the heap must be able to be computed
-			 *    very, very quickly for GC purposes.   Restrictions on the layout
-			 *    of the object guarantee this is possible.
-			 *
-			 *    Any object that inherits from Object must be able to
-			 *    compute its complete size by using the first 4 bytes of
-			 *    the object following the Object part and constants
-			 *    reachable from the MethodTable...
-			 *
-			 *    The formula used for this calculation is:
-			 *        MT->GetBaseSize() + ((OBJECTTYPEREF->GetSizeField() * MT->GetComponentSize())
-			 *
-			 *    So for Object, since this is of fixed size, the ComponentSize is 0, which makes the right side
-			 *    of the equation above equal to 0 no matter what the value of GetSizeField(), so the size is just the base size.
-			 *
-			 */
-
-			if (IsArray(value))
-			{
-				var arr = value as Array;
-
-				// ReSharper disable once PossibleNullReferenceException
-				// We already know it's not null because the type is an array.
-				length = arr?.Length ?? 1;
-			}
-			else if (IsString(value))
-			{
-				var str = value as string;
-
-				length = str?.Length ?? 1;
-			}
-
-			return baseSize + length * componentSize;
-		}
     }
+
+    // Helper class to assist with unsafe pinning of arbitrary objects.
+    // It's used by VM code.
+    internal class RawData
+    {
+        public byte Data;
+    }
+
+    // CLR arrays are laid out in memory as follows (multidimensional array bounds are optional):
+    // [ sync block || pMethodTable || num components || MD array bounds || array data .. ]
+    //                 ^               ^                 ^                  ^ returned reference
+    //                 |               |                 \-- ref Unsafe.As<RawArrayData>(array).Data
+    //                 \-- array       \-- ref Unsafe.As<RawData>(array).Data
+    // The BaseSize of an array includes all the fields before the array data,
+    // including the sync block and method table. The reference to RawData.Data
+    // points at the number of components, skipping over these two pointer-sized fields.
+#pragma warning disable 649
+    internal class RawArrayData
+    {
+        public uint Length; // Array._numComponents padded to IntPtr
+#if TARGET_64BIT
+        public uint Padding;
+#endif
+        public byte Data;
+    }
+#pragma warning restore 649
 
     [StructLayout(LayoutKind.Explicit)]
     internal unsafe struct MethodTable
