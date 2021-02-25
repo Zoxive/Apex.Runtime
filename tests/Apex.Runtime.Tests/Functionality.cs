@@ -113,7 +113,7 @@ namespace Apex.Runtime.Tests
         [Fact]
         public void TestNested()
         {
-            sut.SizeOf<string>(null).Should().Be(4);
+            sut.SizeOf<string>(null).Should().Be(8);
 
             ExactSize(() => new Test { Test2 = new Test2 { Test3 = new Test3 { } } });
         }
@@ -264,13 +264,13 @@ namespace Apex.Runtime.Tests
         [Fact]
         public void Tasks()
         {
-            sut.SizeOf(Task.CompletedTask).Should().Be(41);
+            sut.SizeOf(Task.CompletedTask).Should().Be(80);
 
-            sut.SizeOf(Task.Delay(1)).Should().Be(40);
+            sut.SizeOf(Task.Delay(1)).Should().Be(72);
 
-            sut.SizeOf(Task.FromResult(4)).Should().Be(44);
+            sut.SizeOf(Task.FromResult(4)).Should().Be(76);
 
-            sut.SizeOf(Task.FromResult(4L)).Should().Be(52);
+            sut.SizeOf(Task.FromResult(4L)).Should().Be(80);
 
             ExactSize(() => Task.FromResult(4), (int)sut.SizeOf(4));
         }
@@ -278,11 +278,11 @@ namespace Apex.Runtime.Tests
         [Fact]
         public void ValueTasks()
         {
-            sut.SizeOf(new ValueTask()).Should().Be(8);
+            sut.SizeOf(new ValueTask()).Should().Be(16);
 
-            sut.SizeOf(new ValueTask<int>(4)).Should().Be(16);
+            sut.SizeOf(new ValueTask<int>(4)).Should().Be(20);
 
-            sut.SizeOf(new ValueTask(Task.Delay(1))).Should().Be(48);
+            sut.SizeOf(new ValueTask(Task.Delay(1))).Should().Be(88);
         }
 
         private sealed class SealedC { }
@@ -302,9 +302,10 @@ namespace Apex.Runtime.Tests
         {
             var sut2 = new Memory(Memory.Mode.Tree);
             var o = new SealedC();
-            sut2.SizeOf(new { a = o }).Should().Be(24);
-            sut2.SizeOf(new { a = o, b = o }).Should().Be(40);
-            sut2.SizeOf(new { a = o, b = o, c = o }).Should().Be(56);
+            sut2.SizeOf(o).Should().Be(24);
+            sut2.SizeOf(new { a = o }).Should().Be(48);
+            sut2.SizeOf(new { a = o, b = o }).Should().Be(80);
+            sut2.SizeOf(new { a = o, b = o, c = o }).Should().Be(112);
         }
 
         [Fact]
