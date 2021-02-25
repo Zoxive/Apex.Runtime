@@ -1,13 +1,13 @@
-﻿using Apex.Runtime.Internal;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
+using Xamarin.Apex.Runtime.Internal;
 
-namespace Apex.Runtime
+namespace Xamarin.Apex.Runtime
 {
     public sealed partial class Memory
     {

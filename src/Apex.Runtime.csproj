@@ -5,20 +5,22 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
+    <AssemblyName>Xamarin.Apex.Runtime</AssemblyName>
+    <RootNamespace>Xamarin.Apex.Runtime</RootNamespace>
   </PropertyGroup>
 
   <PropertyGroup>
-    <PackageId>Apex.Runtime</PackageId>
+    <PackageId>Xamarin.Apex.Runtime</PackageId>
     <PackageVersion>2.0.0</PackageVersion>
-    <Authors>Dominic Bolin</Authors>
+    <Authors>Dominic Bolin; Kyle Wascher</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/dbolin/Apex.Runtime</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/dbolin/Apex.Runtime</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/Zoxive/Apex.Runtime</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Zoxive/Apex.Runtime</RepositoryUrl>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <Description>Various runtime information helpers for .NET</Description>
     <Copyright>Copyright (c) 2019 Dominic Bolin</Copyright>
-    <PackageTags>Apex.Runtime, runtime, information, memory</PackageTags>
+    <PackageTags>Apex.Runtime, runtime, information, memory, xamarin</PackageTags>
   </PropertyGroup>
 
   <PropertyGroup>

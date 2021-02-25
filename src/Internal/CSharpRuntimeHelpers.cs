@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace Apex.Runtime.Internal
+namespace Xamarin.Apex.Runtime.Internal
 {
     public static class CSharpRuntimeHelpers
     {

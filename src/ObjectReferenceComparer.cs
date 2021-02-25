@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
-namespace Apex.Runtime
+namespace Xamarin.Apex.Runtime
 {
     internal sealed class ObjectReferenceComparer : IEqualityComparer<object>
     {

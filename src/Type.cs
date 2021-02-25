@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Apex.Runtime
+namespace Xamarin.Apex.Runtime
 {
     public static class Type<T>
     {

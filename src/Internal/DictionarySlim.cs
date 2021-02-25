@@ -10,7 +10,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-namespace Apex.Runtime.Internal
+namespace Xamarin.Apex.Runtime.Internal
 {
 #nullable disable
     [ExcludeFromCodeCoverage]

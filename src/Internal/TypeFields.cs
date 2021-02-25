@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace Apex.Runtime.Internal
+namespace Xamarin.Apex.Runtime.Internal
 {
     internal static class TypeFields
     {

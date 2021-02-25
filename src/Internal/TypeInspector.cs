@@ -31,7 +31,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 
-namespace Apex.Runtime.Internal
+namespace Xamarin.Apex.Runtime.Internal
 {
     /// <summary>
     /// Provides helper methods for inspecting type layouts.
