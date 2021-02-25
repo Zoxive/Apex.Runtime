@@ -32,9 +32,9 @@ namespace Xamarin.Apex.Runtime.Internal
                 MethodTable* methodTablePointer = GetMethodTable(obj);
 
                 // See comment on RawArrayData for details
-                nuint rawSize = methodTablePointer->BaseSize - (nuint)(2 * sizeof(IntPtr));
+                var rawSize = methodTablePointer->BaseSize - (uint)(2 * sizeof(IntPtr));
                 if (methodTablePointer->HasComponentSize)
-                    rawSize += (uint)Unsafe.As<RawArrayData>(obj)!.Length * (nuint)methodTablePointer->ComponentSize;
+                    rawSize += Unsafe.As<RawArrayData>(obj)!.Length * methodTablePointer->ComponentSize;
 
                 GC.KeepAlive(obj); // Keep MethodTable alive
 
