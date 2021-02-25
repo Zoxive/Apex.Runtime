@@ -2,7 +2,7 @@
 <html lang='en'>
 <head>
 <meta charset='utf-8' />
-<title>Benchmarks.MemorySizes-20210219-130628</title>
+<title>Benchmarks.MemorySizes-20210225-144020</title>
 
 <style type="text/css">
 	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
@@ -17,7 +17,7 @@ BenchmarkDotNet=v0.12.1, OS=Windows 10.0.19042
 AMD Ryzen 9 3900X, 1 CPU, 24 logical and 12 physical cores
 .NET Core SDK=5.0.200-preview.20614.14
   [Host]     : .NET Core 5.0.3 (CoreCLR 5.0.321.7212, CoreFX 5.0.321.7212), X64 RyuJIT
-  Job-OECLZG : .NET Core 5.0.3 (CoreCLR 5.0.321.7212, CoreFX 5.0.321.7212), X64 RyuJIT
+  Job-TZBFTD : .NET Core 5.0.3 (CoreCLR 5.0.321.7212, CoreFX 5.0.321.7212), X64 RyuJIT
 </code></pre>
 <pre><code>Runtime=.NET Core 5.0  Server=False  
 </code></pre>
@@ -25,8 +25,8 @@ AMD Ryzen 9 3900X, 1 CPU, 24 logical and 12 physical cores
 <table>
 <thead><tr><th>             Method</th><th>Count</th><th>Mean</th><th>Error</th><th>StdDev</th><th>Gen 0</th><th>Gen 1</th><th>Gen 2</th><th>Allocated</th>
 </tr>
-</thead><tbody><tr><td>ImmutableSortedDictionary</td><td>100</td><td>3.507 &mu;s</td><td>0.0085 &mu;s</td><td>0.0075 &mu;s</td><td>-</td><td>-</td><td>-</td><td>-</td>
-</tr><tr><td>ImmutableSortedDictionary</td><td>10000</td><td>427.759 &mu;s</td><td>4.1134 &mu;s</td><td>3.6464 &mu;s</td><td>-</td><td>-</td><td>-</td><td>-</td>
+</thead><tbody><tr><td>ImmutableSortedDictionary</td><td>100</td><td>3.509 &mu;s</td><td>0.0220 &mu;s</td><td>0.0205 &mu;s</td><td>-</td><td>-</td><td>-</td><td>-</td>
+</tr><tr><td>ImmutableSortedDictionary</td><td>10000</td><td>370.203 &mu;s</td><td>1.0414 &mu;s</td><td>0.8696 &mu;s</td><td>-</td><td>-</td><td>-</td><td>-</td>
 </tr></tbody></table>
 </body>
 </html>

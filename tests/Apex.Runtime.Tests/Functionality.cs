@@ -91,8 +91,6 @@ namespace Apex.Runtime.Tests
 
             var actual = sut.SizeOf(t);
 
-            //t = func();
-
             _testOutputHelper.WriteLine($"SizeOf = {actual}");
 
             actual.Should().Be(e - s + adjustment);
