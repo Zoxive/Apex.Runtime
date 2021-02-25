@@ -20,7 +20,8 @@ namespace Apex.Runtime.Internal
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static unsafe MethodTable* GetMethodTable(object obj)
         {
-            var offset = IsRunningOnMono ? -2 : -1;
+            //return (MethodTable*)obj.GetType().TypeHandle.Value.ToPointer();
+            var offset = IsRunningOnMono? -2 : -1;
             return (MethodTable*) Unsafe.Add(ref Unsafe.As<byte, IntPtr>(ref obj.GetRawData()), offset);
         }
 
