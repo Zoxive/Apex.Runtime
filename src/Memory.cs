@@ -213,16 +213,12 @@ namespace Apex.Runtime
 
         internal static long GetSizeOfType(Type type)
         {
-            var (size, overhead) = TypeInspector.GetSize(type);
-            return size + overhead;
-            /*
             return _objectSizes.GetOrAdd(type,
                 t =>
                 {
                     var (size, overhead) = TypeInspector.GetSize(t);
                     return size + overhead;
                 });
-            */
         }
     }
 }
